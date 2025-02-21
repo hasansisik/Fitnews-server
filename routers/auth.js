@@ -9,6 +9,7 @@ const {
   verifyEmail,
   againEmail,
   editProfile,
+  getAllUsers,
 } = require("../controllers/auth");
 const { isAuthenticated } = require("../middleware/authMiddleware");
 
@@ -23,5 +24,6 @@ router.post("/reset-password", resetPassword);
 router.post("/verify-email", verifyEmail);
 router.post("/again-email", againEmail);
 router.post("/edit-profile", isAuthenticated, editProfile);
+router.get("/users", isAuthenticated, getAllUsers);
 
 module.exports = router;

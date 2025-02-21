@@ -309,14 +309,21 @@ const editProfile = async (req, res) => {
   }
 };
 
+// Get All Users
+const getAllUsers = async (req, res) => {
+  const users = await User.find({}).select('name email role isVerified');
+  res.status(StatusCodes.OK).json({ users });
+};
+
 module.exports = {
   register,
   login,
   logout,
-  verifyEmail,
-  againEmail,
+  getMyProfile,
   forgotPassword,
   resetPassword,
-  getMyProfile,
   editProfile,
+  verifyEmail,
+  againEmail,
+  getAllUsers,
 };
