@@ -9,18 +9,18 @@ const { generateToken } = require("../services/token.service");
 const verifyEmail = async (req, res) => {
   const { email, verificationCode } = req.body;
 
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ email }).select('auth');
 
   if (!user) {
     return res.status(400).json({ message: "Kullanıcı bulunamadı." });
   }
 
-  if (user.verificationCode !== Number(verificationCode)) {
+  if (user.auth.verificationCode !== verificationCode) {
     return res.status(400).json({ message: "Doğrulama kodu yanlış." });
   }
 
   user.isVerified = true;
-  user.verificationCode = "";
+  user.auth.verificationCode = undefined;
   await user.save();
 
   res.json({ message: "Hesap başarıyla doğrulandı." });
@@ -38,13 +38,13 @@ const againEmail = async (req, res) => {
 
   const verificationCode = Math.floor(1000 + Math.random() * 9000);
 
-  user.verificationCode = verificationCode;
+  user.auth.verificationCode = verificationCode;
   await user.save();
 
   await sendVerificationEmail({
     name: user.name,
     email: user.email,
-    verificationCode: user.verificationCode,
+    verificationCode: verificationCode,
   });
   res.json({ message: "Doğrulama kodu Gönderildi" });
 };
@@ -66,9 +66,11 @@ const register = async (req, res, next) => {
     const user = new User({
       name,
       email,
-      password,
-      picture,
-      verificationCode,
+      profile: { picture },
+      auth: {
+        password,
+        verificationCode
+      }
     });
 
     await user.save();
@@ -93,7 +95,7 @@ const register = async (req, res, next) => {
     await sendVerificationEmail({
       name: user.name,
       email: user.email,
-      verificationCode: user.verificationCode,
+      verificationCode: user.auth.verificationCode,
     });
 
     res.json({
@@ -103,7 +105,7 @@ const register = async (req, res, next) => {
         _id: user._id,
         name: user.name,
         email: user.email,
-        picture: user.picture,
+        picture: user.profile.picture,
         token: accessToken,
       },
     });
@@ -122,14 +124,14 @@ const login = async (req, res, next) => {
         "Lütfen e-posta adresinizi ve şifrenizi girin"
       );
     }
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select('auth profile');
 
     if (!user) {
       throw new CustomError.UnauthenticatedError(
         "Ne yazık ki böyle bir kullanıcı yok"
       );
     }
-    const isPasswordCorrect = await user.comparePassword(password);
+    const isPasswordCorrect = await user.auth.comparePassword(password);
 
     if (!isPasswordCorrect) {
       throw new CustomError.UnauthenticatedError("Kayıtlı şifreniz yanlış!");
@@ -173,8 +175,7 @@ const login = async (req, res, next) => {
         _id: user._id,
         name: user.name,
         email: user.email,
-        picture: user.picture,
-        status: user.status,
+        picture: user.profile.picture,
         token: accessToken,
       },
     });
@@ -200,8 +201,9 @@ const logout = async (req, res, next) => {
 
     res.clearCookie("refreshtoken", { path: "/v1/auth/refreshtoken" });
 
-    res.json({
-      message: "logged out !",
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Logged out!",
     });
   } catch (error) {
     next(error);
@@ -211,143 +213,99 @@ const logout = async (req, res, next) => {
 //Forgot Password
 const forgotPassword = async (req, res) => {
   const { email } = req.body;
-
   if (!email) {
-    throw new CustomError.BadRequestError("Lütfen e-posta adresinizi girin.");
+    throw new CustomError.BadRequestError("Please provide valid email");
   }
 
   const user = await User.findOne({ email });
 
   if (user) {
-    const passwordToken = Math.floor(1000 + Math.random() * 9000);
-
+    const passwordToken = crypto.randomBytes(70).toString("hex");
+    // send email
     await sendResetPasswordEmail({
       name: user.name,
       email: user.email,
-      passwordToken: passwordToken,
+      token: passwordToken,
     });
 
     const tenMinutes = 1000 * 60 * 10;
     const passwordTokenExpirationDate = new Date(Date.now() + tenMinutes);
 
-    user.passwordToken = passwordToken;
-    user.passwordTokenExpirationDate = passwordTokenExpirationDate;
-
+    user.auth.passwordToken = passwordToken;
+    user.auth.passwordTokenExpirationDate = passwordTokenExpirationDate;
     await user.save();
-  } else {
-    throw new CustomError.BadRequestError("Kullanıcı bulunamadı.");
   }
 
-  res.status(StatusCodes.OK).json({
-    message: "Şifre sıfırlama bağlantısı için lütfen e-postanızı kontrol edin.",
-  });
+  res
+    .status(StatusCodes.OK)
+    .json({ msg: "Please check your email for reset password link" });
 };
 
 //Reset Password
 const resetPassword = async (req, res) => {
-  try {
-    const { email, passwordToken, newPassword } = req.body;
-    if (!passwordToken || !newPassword) {
-      throw new CustomError.BadRequestError(
-        "Lütfen sıfırlama kodunu ve yeni şifrenizi girin."
-      );
-    }
-    const user = await User.findOne({ email });
-
-    if (user) {
-      const currentDate = new Date();
-
-      if (user.passwordToken === passwordToken) {
-        if (currentDate > user.passwordTokenExpirationDate) {
-          throw new CustomError.BadRequestError(
-            "Kodunuz süresi doldu. Lütfen tekrar deneyin."
-          );
-        }
-        user.password = newPassword;
-        user.passwordToken = null;
-        user.passwordTokenExpirationDate = null;
-        await user.save();
-        res.json({
-          message: "Şifre başarıyla sıfırlandı.",
-        });
-      } else {
-        res.status(400).json({
-          message: "Geçersiz sıfırlama kodu.",
-        });
-      }
-    } else {
-      res.status(404).json({
-        message: "Kullanıcı bulunamadı.",
-      });
-    }
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({
-      message: "Sistem hatası oluştu. Lütfen tekrar deneyin.",
-    });
+  const { token, email, password } = req.body;
+  if (!token || !email || !password) {
+    throw new CustomError.BadRequestError("Please provide all values");
   }
+  const user = await User.findOne({ email }).select('auth');
+
+  if (user) {
+    const currentDate = new Date();
+
+    if (
+      user.auth.passwordToken === token &&
+      user.auth.passwordTokenExpirationDate > currentDate
+    ) {
+      user.auth.password = password;
+      user.auth.passwordToken = null;
+      user.auth.passwordTokenExpirationDate = null;
+      await user.save();
+    }
+  }
+
+  res.send("reset password");
 };
 
 //Edit Profile
 const editProfile = async (req, res) => {
   try {
-    const updates = Object.keys(req.body);
-    const allowedUpdates = [
-      "name",
-      "email",
-      "password",
-      "address",
-      "picture",
-      "phoneNumber",
-    ];
-    const isValidOperation = updates.every((update) =>
-      allowedUpdates.includes(update)
-    );
-
-    if (!isValidOperation) {
-      return res
-        .status(400)
-        .send({ error: "Sistem hatası oluştu. Lütfen tekrar deneyin" });
-    }
-
     const user = await User.findById(req.user.userId);
-
     if (!user) {
-      return res.status(404).json({
-        message: "Kullanıcı bulunamadı.",
-      });
+      throw new CustomError.NotFoundError("User not found");
     }
 
-    if (req.body.email && req.body.email !== req.user.email) {
-      updates.forEach((update) => (req.user[update] = req.body[update]));
+    const { name, phoneNumber, address, picture } = req.body;
 
-      const verificationCode = Math.floor(1000 + Math.random() * 9000);
-      user.verificationCode = verificationCode;
-      user.isVerified = false;
-      await user.save();
+    // Update basic info
+    if (name) user.name = name;
+    
+    // Update profile
+    if (phoneNumber) user.profile.phoneNumber = phoneNumber;
+    if (picture) user.profile.picture = picture;
 
-      await sendVerificationEmail({
-        name: req.user.name,
-        email: req.user.email,
-        verificationCode: verificationCode,
-      });
+    // Update address
+    if (address) {
+      user.address = {
+        ...user.address,
+        ...address
+      };
     }
 
-    updates.forEach((update) => {
-      if (req.body[update]) {
-        user[update] = req.body[update];
-      }
-    });
     await user.save();
 
-    res.json({
-      message: "Profil başarıyla güncellendi.",
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Profile updated successfully",
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        profile: user.profile,
+        address: user.address
+      }
     });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({
-      message: "Sistem hatası oluştu. Lütfen tekrar deneyin",
-    });
+  } catch (error) {
+    next(error);
   }
 };
 
@@ -355,10 +313,10 @@ module.exports = {
   register,
   login,
   logout,
+  verifyEmail,
+  againEmail,
   forgotPassword,
   resetPassword,
-  verifyEmail,
   getMyProfile,
-  againEmail,
   editProfile,
 };
