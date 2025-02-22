@@ -18,7 +18,8 @@ router.get('/', getAllPosts);
 router.get('/:id', getPost);
 
 // Protected routes
-router.post('/', isAuthenticated,createPost);
+router.use(isAuthenticated);
+router.post('/', createPost);
 router.get('/user/posts', getUserPosts);
 router.patch('/:id', updatePost);
 router.delete('/:id', deletePost);

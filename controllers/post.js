@@ -37,21 +37,8 @@ const createPost = async (req, res) => {
 // Get All Posts
 const getAllPosts = async (req, res) => {
   try {
-    const { category, status, tag } = req.query;
-    const queryObject = {};
-
-    // Filtreleme
-    if (category) {
-      queryObject['metadata.category'] = category;
-    }
-    if (status) {
-      queryObject['metadata.status'] = status;
-    }
-    if (tag) {
-      queryObject['metadata.tags'] = tag;
-    }
-
-    const posts = await Post.find(queryObject)
+    console.log("req.query");
+    const posts = await Post.find()
       .sort({ order: -1, createdAt: -1 });
       
     res.status(StatusCodes.OK).json({ posts, count: posts.length });
