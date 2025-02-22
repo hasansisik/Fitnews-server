@@ -37,13 +37,11 @@ const createPost = async (req, res) => {
 // Get All Posts
 const getAllPosts = async (req, res) => {
   try {
-    console.log("req.query");
     const posts = await Post.find()
       .sort({ order: -1, createdAt: -1 });
       
     res.status(StatusCodes.OK).json({ posts, count: posts.length });
   } catch (error) {
-    console.error('Get All Posts Error:', error);
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ 
       msg: 'Postlar getirilirken bir hata oluştu',
       error: error.message 
@@ -141,7 +139,7 @@ const deletePost = async (req, res) => {
       throw new CustomError.UnauthorizedError('Bu işlem için yetkiniz yok');
     }
 
-    await post.remove();
+    await Post.findByIdAndDelete(id);
     res.status(StatusCodes.OK).json({ message: 'Post başarıyla silindi' });
   } catch (error) {
     if (error instanceof CustomError.NotFoundError) {
