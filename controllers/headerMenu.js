@@ -148,7 +148,6 @@ const updateMenuOrders = async (req, res) => {
     if (error instanceof CustomError.BadRequestError) {
       res.status(StatusCodes.BAD_REQUEST).json({ msg: error.message });
     } else {
-      console.error('Update Menu Orders Error:', error);
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ 
         msg: 'Menü sıralaması güncellenirken bir hata oluştu',
         error: error.message 

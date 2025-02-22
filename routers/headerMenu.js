@@ -16,8 +16,8 @@ router.get('/', getAllMenuItems);
 // Protected routes
 router.use(isAuthenticated);
 router.post('/', createMenuItem);
+router.patch('/orders/bulk', updateMenuOrders);
 router.patch('/:id', updateMenuItem);
 router.delete('/:id', deleteMenuItem);
-router.patch('/orders/bulk', updateMenuOrders);
 
 module.exports = router;
