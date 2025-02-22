@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 const AdvertisementSchema = new mongoose.Schema({
-  image: {
+  imageUrl: {
     type: String,
     required: [true, 'Görsel linki zorunludur']
   },
@@ -17,7 +17,7 @@ const AdvertisementSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Tip alanı zorunludur'],
     enum: {
-      values: ['top', 'bottom'],
+      values: ['big', 'small'],
       message: '{VALUE} geçerli bir tip değil'
     }
   }
