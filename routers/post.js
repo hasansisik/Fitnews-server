@@ -26,6 +26,6 @@ router.delete('/:id', deletePost);
 
 // Admin only routes
 router.patch('/:id/order', isAdmin, updatePostOrder);
-router.patch('/orders/bulk', isAdmin, updatePostOrders);
+router.patch('/orders/bulk', updatePostOrders);
 
 module.exports = router;

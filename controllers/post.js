@@ -7,6 +7,7 @@ const User = require('../models/User');
 const createPost = async (req, res) => {
   try {
     const { title, content, metadata, order } = req.body;
+    console.log("order",order);
 
     const user = await User.findById(req.user.userId);
     if (!user) {
@@ -38,7 +39,7 @@ const createPost = async (req, res) => {
 const getAllPosts = async (req, res) => {
   try {
     const posts = await Post.find()
-      .sort({ order: -1, createdAt: -1 });
+      .sort({ order: 1, createdAt: -1 });
       
     res.status(StatusCodes.OK).json({ posts, count: posts.length });
   } catch (error) {
@@ -207,25 +208,29 @@ const updatePostOrder = async (req, res) => {
 // Bulk Update Post Orders (Admin Only)
 const updatePostOrders = async (req, res) => {
   try {
-    const { orders } = req.body;
+    const { items } = req.body;
 
-    if (!Array.isArray(orders)) {
+    if (!Array.isArray(items)) {
       throw new CustomError.BadRequestError('Sıralama listesi bir dizi olmalıdır');
     }
 
-    const updates = orders.map(async ({ postId, order }) => {
+    const updates = items.map(async ({ id, order }) => {
       if (typeof order !== 'number') {
         throw new CustomError.BadRequestError('Sıralama değeri bir sayı olmalıdır');
       }
       
       return Post.findByIdAndUpdate(
-        postId,
+        id,
         { order },
         { new: true, runValidators: true }
       );
     });
 
     const updatedPosts = await Promise.all(updates);
+    
+    // Sort the posts by order before sending back
+    updatedPosts.sort((a, b) => a.order - b.order);
+    
     res.status(StatusCodes.OK).json({ posts: updatedPosts });
   } catch (error) {
     if (error instanceof CustomError.BadRequestError) {
