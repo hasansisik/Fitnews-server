@@ -313,7 +313,7 @@ const editProfile = async (req, res) => {
 
 // Get All Users
 const getAllUsers = async (req, res) => {
-  const users = await User.find({}).select('name email role isVerified');
+  const users = await User.find({}).select('name email role isVerified status createdAt');
   res.status(StatusCodes.OK).json({ users });
 };
 

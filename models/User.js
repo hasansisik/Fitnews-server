@@ -46,6 +46,14 @@ const UserSchema = new mongoose.Schema(
     address: AddressSchema, // Adres alt şeması
     auth: AuthSchema, // Kimlik doğrulama alt şeması
     profile: ProfileSchema, // Profil bilgileri alt şeması
+    status: {
+      type: String,
+      enum: {
+        values: ['active', 'inactive'],
+        message: '{VALUE} geçerli bir durum değil'
+      },
+      default: 'active'
+    }
   },
   { timestamps: true }
 );
