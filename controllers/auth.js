@@ -317,15 +317,95 @@ const getAllUsers = async (req, res) => {
   res.status(StatusCodes.OK).json({ users });
 };
 
+// Edit User (Admin Only)
+const editUsers = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { role, status } = req.body;
+
+    const admin = await User.findById(req.user.userId);
+
+    // Check if the requesting user is admin
+    if (admin.role !== 'admin') {
+      return res.status(StatusCodes.FORBIDDEN).json({ 
+        message: "Bu işlemi sadece admin yapabilir" 
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(StatusCodes.NOT_FOUND).json({ 
+        message: "Kullanıcı bulunamadı" 
+      });
+    }
+
+    // Update user fields if provided
+    if (role) user.role = role;
+    if (status !== undefined) user.status = status;
+
+    await user.save();
+
+    res.status(StatusCodes.OK).json({ 
+      message: "Kullanıcı bilgileri güncellendi",
+      user 
+    });
+  } catch (error) {
+    console.error("Error in editUsers:", error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      message: "Kullanıcı güncellenirken bir hata oluştu",
+      error: error.message
+    });
+  }
+};
+
+// Delete User (Admin Only)
+const deleteUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const admin = await User.findById(req.user.userId);
+    console.log("admin",admin);
+    console.log("userId",userId);
+
+    // Check if the requesting user is admin
+    if (admin.role !== 'admin') {
+      return res.status(StatusCodes.FORBIDDEN).json({ 
+        message: "Bu işlemi sadece admin yapabilir" 
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(StatusCodes.NOT_FOUND).json({ 
+        message: "Kullanıcı bulunamadı" 
+      });
+    }
+
+    await User.findByIdAndDelete(userId);
+
+    res.status(StatusCodes.OK).json({ 
+      message: "Kullanıcı başarıyla silindi" 
+    });
+  } catch (error) {
+    console.log("Error in deleteUser:", error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      message: "Kullanıcı silinirken bir hata oluştu",
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   register,
   login,
   logout,
-  getMyProfile,
-  forgotPassword,
-  resetPassword,
-  editProfile,
   verifyEmail,
   againEmail,
+  forgotPassword,
+  resetPassword,
+  getMyProfile,
+  editProfile,
   getAllUsers,
+  editUsers,
+  deleteUser,
 };
