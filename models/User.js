@@ -11,7 +11,7 @@ const AddressSchema = new mongoose.Schema({
 
 const AuthSchema = new mongoose.Schema({
   password: { type: String, required: true, select: false },
-  verificationCode: { type: String, select: false },
+  verificationCode: { type: Number},
   passwordToken: { type: String, select: false },
   passwordTokenExpirationDate: { type: Date, select: false },
 });

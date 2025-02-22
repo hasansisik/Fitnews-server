@@ -118,13 +118,14 @@ const register = async (req, res, next) => {
 const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
+    console.log(req.body);
 
     if (!email || !password) {
       throw new CustomError.BadRequestError(
         "Lütfen e-posta adresinizi ve şifrenizi girin"
       );
     }
-    const user = await User.findOne({ email }).select('auth profile');
+    const user = await User.findOne({ email }).select('auth profile isVerified name email');
 
     if (!user) {
       throw new CustomError.UnauthenticatedError(
@@ -136,6 +137,7 @@ const login = async (req, res, next) => {
     if (!isPasswordCorrect) {
       throw new CustomError.UnauthenticatedError("Kayıtlı şifreniz yanlış!");
     }
+    console.log(user.isVerified);
     if (!user.isVerified) {
       throw new CustomError.UnauthenticatedError(
         "Lütfen e-postanızı doğrulayın !"
