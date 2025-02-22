@@ -95,13 +95,12 @@ const updatePost = async (req, res) => {
       post.content.image = content.image || post.content.image;
     }
     if (metadata) {
-      post.metadata.category = metadata.category || post.metadata.category;
-      post.metadata.tags = metadata.tags || post.metadata.tags;
-      // Status sadece admin tarafından değiştirilebilir
-      if (metadata.status && req.user.role === 'admin') {
+      if (metadata.category !== undefined) post.metadata.category = metadata.category;
+      if (metadata.tags !== undefined) post.metadata.tags = metadata.tags;
+      if (metadata.status !== undefined) {
         post.metadata.status = metadata.status;
       }
-    }
+          }
     // Order sadece admin tarafından değiştirilebilir
     if (typeof order === 'number' && req.user.role === 'admin') {
       post.order = order;

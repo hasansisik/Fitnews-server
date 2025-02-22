@@ -11,7 +11,7 @@ const {
   updatePostOrders
 } = require('../controllers/post');
 
-const { isAuthenticated } = require('../middleware/authMiddleware');
+const { isAuthenticated, isAdmin } = require('../middleware/authMiddleware');
 
 // Public routes
 router.get('/', getAllPosts);
@@ -23,7 +23,9 @@ router.post('/', createPost);
 router.get('/user/posts', getUserPosts);
 router.patch('/:id', updatePost);
 router.delete('/:id', deletePost);
-router.patch('/:id/order', updatePostOrder);
-router.patch('/orders/bulk', updatePostOrders);
+
+// Admin only routes
+router.patch('/:id/order', isAdmin, updatePostOrder);
+router.patch('/orders/bulk', isAdmin, updatePostOrders);
 
 module.exports = router;
