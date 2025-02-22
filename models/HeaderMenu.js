@@ -10,13 +10,6 @@ const HeaderMenuSchema = new mongoose.Schema({
     type: String,
     required: [true, 'URL alanı zorunludur'],
     trim: true,
-    validate: {
-      validator: function(v) {
-        // URL'in / ile başlamamasını kontrol et
-        return !v.startsWith('/');
-      },
-      message: 'URL / karakteri ile başlamamalıdır'
-    }
   },
   order: {
     type: Number,
