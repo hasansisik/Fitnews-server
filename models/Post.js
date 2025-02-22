@@ -15,11 +15,7 @@ const ContentSchema = new mongoose.Schema({
 const MetadataSchema = new mongoose.Schema({
   category: {
     type: String,
-    required: [true, 'Kategori alanı zorunludur'],
-    enum: {
-      values: ['beslenme', 'egzersiz', 'sağlık', 'yaşam tarzı', 'motivasyon', 'diğer'],
-      message: '{VALUE} geçerli bir kategori değil'
-    }
+    required: [true, 'Kategori alanı zorunludur']
   },
   tags: [{
     type: String,
