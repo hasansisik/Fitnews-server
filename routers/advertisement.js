@@ -14,10 +14,9 @@ const { isAuthenticated } = require('../middleware/authMiddleware');
 router.get('/page/:page', getPageAdvertisements);
 
 // Protected routes
-router.use(isAuthenticated);
-router.post('/', createAdvertisement);
+router.post('/', isAuthenticated, createAdvertisement);
 router.get('/', getAllAdvertisements);
-router.patch('/:id', updateAdvertisement);
-router.delete('/:id', deleteAdvertisement);
+router.patch('/:id', isAuthenticated, updateAdvertisement);
+router.delete('/:id', isAuthenticated, deleteAdvertisement);
 
 module.exports = router;
