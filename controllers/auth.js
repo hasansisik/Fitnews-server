@@ -4,6 +4,7 @@ const { StatusCodes } = require("http-status-codes");
 const CustomError = require("../errors");
 const { sendResetPasswordEmail, sendVerificationEmail } = require("../helpers");
 const { generateToken } = require("../services/token.service");
+const bcrypt = require('bcrypt');
 
 //Email
 const verifyEmail = async (req, res) => {
@@ -303,7 +304,11 @@ const editProfile = async (req, res) => {
       throw new CustomError.NotFoundError("User not found");
     }
 
-    const { name, phoneNumber, address, picture, email } = req.body;
+    const { name, email, password } = req.body;
+    console.log("Received:", req.body);
+
+    if (name) user.name = name;
+    if (password) user.auth.password = password; // Password will be hashed by AuthSchema's pre-save middleware
 
     // Handle email change
     if (email && email !== user.email) {
@@ -331,21 +336,6 @@ const editProfile = async (req, res) => {
         email: email,
         verificationCode: verificationCode,
       });
-    }
-
-    // Update basic info
-    if (name) user.name = name;
-    
-    // Update profile
-    if (phoneNumber) user.profile.phoneNumber = phoneNumber;
-    if (picture) user.profile.picture = picture;
-
-    // Update address
-    if (address) {
-      user.address = {
-        ...user.address,
-        ...address
-      };
     }
 
     await user.save();
