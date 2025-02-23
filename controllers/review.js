@@ -9,8 +9,6 @@ const createReview = async (req, res) => {
   try {
     const { postId } = req.params;
     const { comment, nickname, email } = req.body;
-    console.log(req.body);
-    console.log(postId);
 
     // Post kontrolü
     const post = await Post.findById(postId);
@@ -24,12 +22,15 @@ const createReview = async (req, res) => {
       reviewer: {}
     };
 
+
+    const user = await User.findOne({ email: email });
+
     // Eğer kullanıcı giriş yapmışsa
-    if (req.user) {
-      const user = await User.findById(req.user.userId);
+    if (user) {
+      // Kullanıcı bilgilerini al
       reviewData.reviewer = {
         isRegistered: true,
-        user: req.user.userId,
+        user: user._id,
         nickname: user.name,
         email: user.email
       };
@@ -64,85 +65,113 @@ const createReview = async (req, res) => {
   }
 };
 
-// Get Post Reviews
-const getPostReviews = async (req, res) => {
+
+// Get All Reviews
+const getReviews = async (req, res) => {
   try {
-    const { postId } = req.params;
-    const { status } = req.query;
+    const reviews = await Review.find({})
+      .populate({
+        path: 'post',
+        select: 'title'
+      })
+      .sort('-createdAt');
 
-    const queryObject = { post: postId };
-  
-    // Admin için tüm yorumları getir
-    if (req.user?.role === 'admin' && status) {
-      queryObject.status = status;
-    } else {
-      // Normal kullanıcılar için sadece onaylanmış yorumları getir
-      queryObject.status = 'onaylandı';
-    }
-
-    const reviews = await Review.find(queryObject).sort('-createdAt');
     res.status(StatusCodes.OK).json({ reviews, count: reviews.length });
   } catch (error) {
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ msg: 'Yorumlar getirilirken bir hata oluştu' });
+    console.error('Get Reviews Error:', error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ msg: 'Yorumları getirirken bir hata oluştu' });
   }
 };
 
-// Update Review Status (Admin Only)
-const updateReviewStatus = async (req, res) => {
+// Yorumları onaylama veya reddetme
+const confirmReviews = async (req, res) => {
   try {
-    const { id: reviewId } = req.params;
-    const { status } = req.body;
+    const { reviewIds, status } = req.body;
 
-    const review = await Review.findById(reviewId);
-    if (!review) {
-      throw new CustomError.NotFoundError('Yorum bulunamadı');
+    if (!reviewIds || !Array.isArray(reviewIds) || !status) {
+      return res.status(400).json({
+        success: false,
+        message: "Geçersiz istek. Review ID'leri ve status gerekli."
+      });
     }
 
-    review.status = status;
-    await review.save();
+    if (!["onaylandı", "onaylanmadı"].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Geçersiz status değeri. 'onaylandı' veya 'onaylanmadı' olmalı."
+      });
+    }
 
-    res.status(StatusCodes.OK).json({ review });
+    // Birden fazla yorumu güncelle
+    const result = await Review.updateMany(
+      { _id: { $in: reviewIds } },
+      { $set: { status: status } }
+    );
+
+    if (result.modifiedCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Güncellenecek yorum bulunamadı."
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `${result.modifiedCount} yorum başarıyla güncellendi.`,
+      modifiedCount: result.modifiedCount
+    });
+
   } catch (error) {
-    if (error instanceof CustomError.NotFoundError) {
-      res.status(error.statusCode).json({ msg: error.message });
-    } else {
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ msg: 'Yorum durumu güncellenirken bir hata oluştu' });
-    }
+    console.error("Yorumları onaylama hatası:", error);
+    res.status(500).json({
+      success: false,
+      message: "Yorumları onaylarken bir hata oluştu.",
+      error: error.message
+    });
   }
 };
 
-// Delete Review (Admin Only)
+// Delete Review
 const deleteReview = async (req, res) => {
   try {
-    const { id: reviewId } = req.params;
+    const { reviewIds } = req.body;
 
-    const review = await Review.findById(reviewId);
-    if (!review) {
-      throw new CustomError.NotFoundError('Yorum bulunamadı');
+    if (!reviewIds || !Array.isArray(reviewIds)) {
+      return res.status(400).json({
+        success: false,
+        message: "Geçersiz istek. Review ID'leri gerekli."
+      });
     }
 
-    // Post'un review sayısını güncelle
-    const post = await Post.findById(review.post);
-    if (post) {
-      post.reviews = post.reviews.filter(id => id.toString() !== reviewId);
-      post.reviewCount = post.reviews.length;
-      await post.save();
+    // Birden fazla yorumu sil
+    const result = await Review.deleteMany({ _id: { $in: reviewIds } });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Silinecek yorum bulunamadı."
+      });
     }
 
-    await review.remove();
-    res.status(StatusCodes.OK).json({ msg: 'Yorum başarıyla silindi' });
+    res.status(200).json({
+      success: true,
+      message: `${result.deletedCount} yorum başarıyla silindi.`,
+      deletedCount: result.deletedCount
+    });
+
   } catch (error) {
-    if (error instanceof CustomError.NotFoundError) {
-      res.status(error.statusCode).json({ msg: error.message });
-    } else {
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ msg: 'Yorum silinirken bir hata oluştu' });
-    }
+    console.error("Yorumları silme hatası:", error);
+    res.status(500).json({
+      success: false,
+      message: "Yorumları silerken bir hata oluştu.",
+      error: error.message
+    });
   }
 };
 
 module.exports = {
   createReview,
-  getPostReviews,
-  updateReviewStatus,
+  getReviews,
+  confirmReviews,
   deleteReview
 };

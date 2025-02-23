@@ -2,20 +2,21 @@ const express = require('express');
 const router = express.Router();
 const {
   createReview,
-  getPostReviews,
-  updateReviewStatus,
+  getReviews,
+  confirmReviews,
   deleteReview
 } = require('../controllers/review');
 
 const { isAuthenticated } = require('../middleware/authMiddleware');
 
 // Public routes
-router.get('/post/:postId', getPostReviews);
+router.get('/', getReviews);
 router.post('/post/:postId', createReview);
+router.post('/confirm', confirmReviews);
+router.post('/delete', deleteReview);
 
 // Protected routes
 router.use(isAuthenticated);
-router.patch('/:id/status', updateReviewStatus);
 router.delete('/:id', deleteReview);
 
 module.exports = router;

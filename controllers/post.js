@@ -56,7 +56,7 @@ const getPost = async (req, res) => {
     const post = await Post.findById(req.params.id)
       .populate({
         path: 'reviews',
-        select: 'reviewer comment createdAt',
+        select: 'reviewer comment createdAt status',
         options: { sort: { createdAt: -1 } }
       });
     
