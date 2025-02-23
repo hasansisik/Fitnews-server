@@ -305,10 +305,9 @@ const editProfile = async (req, res) => {
     }
 
     const { name, email, password } = req.body;
-    console.log("Received:", req.body);
 
     if (name) user.name = name;
-    if (password) user.auth.password = password; // Password will be hashed by AuthSchema's pre-save middleware
+    if (password) user.auth.password = password; 
 
     // Handle email change
     if (email && email !== user.email) {
