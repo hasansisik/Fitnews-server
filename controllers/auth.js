@@ -7,28 +7,55 @@ const { generateToken } = require("../services/token.service");
 
 //Email
 const verifyEmail = async (req, res) => {
-  const { email, verificationCode } = req.body;
+  try {
+    const { email, verificationCode } = req.body;
 
-  const user = await User.findOne({ email }).select('auth');
+    if (!email || !verificationCode) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: "Email ve doğrulama kodu gereklidir."
+      });
+    }
 
-  if (!user) {
-    return res.status(400).json({ message: "Kullanıcı bulunamadı." });
+    const user = await User.findOne({ email }).select('auth isVerified');
+
+    if (!user) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: "Bu email adresi ile kayıtlı kullanıcı bulunamadı."
+      });
+    }
+
+    if (user.isVerified) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: "Bu hesap zaten doğrulanmış."
+      });
+    }
+
+    const numericVerificationCode = Number(verificationCode);
+
+    if (user.auth.verificationCode !== numericVerificationCode) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: "Geçersiz doğrulama kodu. Lütfen tekrar kontrol ediniz."
+      });
+    }
+
+    user.isVerified = true;
+    user.auth.verificationCode = undefined;
+    await user.save();
+
+    return res.status(StatusCodes.OK).json({
+      message: "Email adresiniz başarıyla doğrulandı."
+    });
+  } catch (error) {
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      message: "Email doğrulama işlemi sırasında bir hata oluştu. Lütfen daha sonra tekrar deneyiniz."
+    });
   }
-
-  if (user.auth.verificationCode !== verificationCode) {
-    return res.status(400).json({ message: "Doğrulama kodu yanlış." });
-  }
-
-  user.isVerified = true;
-  user.auth.verificationCode = undefined;
-  await user.save();
-
-  res.json({ message: "Hesap başarıyla doğrulandı." });
 };
 
 //Again Email
 const againEmail = async (req, res) => {
   const { email } = req.body;
+  console.log(email);
 
   const user = await User.findOne({ email });
 
@@ -276,7 +303,35 @@ const editProfile = async (req, res) => {
       throw new CustomError.NotFoundError("User not found");
     }
 
-    const { name, phoneNumber, address, picture } = req.body;
+    const { name, phoneNumber, address, picture, email } = req.body;
+
+    // Handle email change
+    if (email && email !== user.email) {
+      // Check if new email already exists
+      const emailExists = await User.findOne({ email });
+      if (emailExists) {
+        throw new CustomError.BadRequestError("Bu e-posta adresi zaten kayıtlı.");
+      }
+
+      // Generate verification code
+      const verificationCode = Math.floor(1000 + Math.random() * 9000);
+      
+      // Update email and set verification status
+      user.email = email;
+      user.isVerified = false;
+      user.auth.verificationCode = verificationCode;
+
+      console.log("Verification code:", verificationCode);
+      console.log("New email:", email);
+      console.log("User:", user.name);
+
+      // Send verification email
+      await sendVerificationEmail({
+        name: user.name,
+        email: email,
+        verificationCode: verificationCode,
+      });
+    }
 
     // Update basic info
     if (name) user.name = name;
@@ -297,17 +352,24 @@ const editProfile = async (req, res) => {
 
     res.status(StatusCodes.OK).json({
       success: true,
-      message: "Profile updated successfully",
+      message: email && email !== user.email 
+        ? "Profil güncellendi. Lütfen yeni email adresinizi doğrulayın."
+        : "Profil başarıyla güncellendi",
       user: {
         _id: user._id,
         name: user.name,
         email: user.email,
         profile: user.profile,
-        address: user.address
+        address: user.address,
+        isVerified: user.isVerified
       }
     });
   } catch (error) {
-    next(error);
+    if (error instanceof CustomError.BadRequestError) {
+      res.status(400).json({ message: error.message });
+    } else {
+      res.status(500).json({ message: "Bir hata oluştu.", error: error.message });
+    }
   }
 };
 
