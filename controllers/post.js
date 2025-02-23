@@ -53,7 +53,12 @@ const getAllPosts = async (req, res) => {
 // Get Single Post
 const getPost = async (req, res) => {
   try {
-    const post = await Post.findById(req.params.id);
+    const post = await Post.findById(req.params.id)
+      .populate({
+        path: 'reviews',
+        select: 'reviewer comment createdAt',
+        options: { sort: { createdAt: -1 } }
+      });
     
     if (!post) {
       throw new CustomError.NotFoundError('Post bulunamadı');

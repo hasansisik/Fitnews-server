@@ -18,6 +18,7 @@ const authRouter = require('./routers/auth');
 const postRouter = require('./routers/post');
 const advertisementRouter = require('./routers/advertisement');
 const headerMenuRouter = require('./routers/headerMenu');
+const reviewRouter = require('./routers/review');
 
 //midlleware
 const notFoundMiddleware = require('./middleware/not-found')
@@ -36,6 +37,7 @@ app.use('/v1/auth', authRouter);
 app.use('/v1/post', postRouter);
 app.use('/v1/ads', advertisementRouter);
 app.use('/v1/menu', headerMenuRouter);
+app.use('/v1/review', reviewRouter);
 
 app.use(notFoundMiddleware);
 app.use(erorHandlerMiddleware);
