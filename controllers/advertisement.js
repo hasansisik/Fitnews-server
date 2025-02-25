@@ -6,7 +6,6 @@ const CustomError = require('../errors');
 const createAdvertisement = async (req, res) => {
   try {
     const { page, type } = req.body;
-    console.log("req.body",req.body);
 
     // Aynı sayfa ve tipte reklam var mı kontrol et
     const existingAd = await Advertisement.findOne({ page, type });

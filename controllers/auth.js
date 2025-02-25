@@ -56,7 +56,6 @@ const verifyEmail = async (req, res) => {
 //Again Email
 const againEmail = async (req, res) => {
   const { email } = req.body;
-  console.log(email);
 
   const user = await User.findOne({ email });
 
@@ -146,7 +145,6 @@ const register = async (req, res, next) => {
 const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
-    console.log(req.body);
 
     if (!email || !password) {
       throw new CustomError.BadRequestError(
@@ -165,7 +163,6 @@ const login = async (req, res, next) => {
     if (!isPasswordCorrect) {
       throw new CustomError.UnauthenticatedError("Kayıtlı şifreniz yanlış!");
     }
-    console.log(user.isVerified);
     if (!user.isVerified) {
       throw new CustomError.UnauthenticatedError(
         "Lütfen e-postanızı doğrulayın !"
@@ -325,10 +322,6 @@ const editProfile = async (req, res) => {
       user.isVerified = false;
       user.auth.verificationCode = verificationCode;
 
-      console.log("Verification code:", verificationCode);
-      console.log("New email:", email);
-      console.log("User:", user.name);
-
       // Send verification email
       await sendVerificationEmail({
         name: user.name,
@@ -413,11 +406,8 @@ const editUsers = async (req, res) => {
 const deleteUser = async (req, res) => {
   try {
     const { userId } = req.params;
-
     const admin = await User.findById(req.user.userId);
-    console.log("admin",admin);
-    console.log("userId",userId);
-
+  
     // Check if the requesting user is admin
     if (admin.role !== 'admin') {
       return res.status(StatusCodes.FORBIDDEN).json({ 
@@ -438,7 +428,6 @@ const deleteUser = async (req, res) => {
       message: "Kullanıcı başarıyla silindi" 
     });
   } catch (error) {
-    console.log("Error in deleteUser:", error);
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       message: "Kullanıcı silinirken bir hata oluştu",
       error: error.message

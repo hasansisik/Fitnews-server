@@ -7,8 +7,6 @@ const User = require('../models/User');
 const createPost = async (req, res) => {
   try {
     const { title, content, metadata, order } = req.body;
-    console.log("order",order);
-
     const user = await User.findById(req.user.userId);
     if (!user) {
       throw new CustomError.NotFoundError('Kullanıcı bulunamadı');
