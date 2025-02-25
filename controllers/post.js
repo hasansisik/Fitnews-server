@@ -17,11 +17,7 @@ const createPost = async (req, res) => {
       content,
       metadata,
       order: order || 0,
-      author: {
-        user: req.user.userId,
-        name: user.name,
-        picture: user.profile?.picture
-      }
+      author: req.user.userId
     });
     res.status(StatusCodes.CREATED).json({ post });
   } catch (error) {
@@ -37,7 +33,8 @@ const createPost = async (req, res) => {
 const getAllPosts = async (req, res) => {
   try {
     const posts = await Post.find()
-      .sort({ order: 1, createdAt: -1 });
+      .sort({ order: 1, createdAt: -1 })
+      .populate('author');
       
     res.status(StatusCodes.OK).json({ posts, count: posts.length });
   } catch (error) {
@@ -56,7 +53,8 @@ const getPost = async (req, res) => {
         path: 'reviews',
         select: 'reviewer comment createdAt status',
         options: { sort: { createdAt: -1 } }
-      });
+      })
+      .populate('author');
     
     if (!post) {
       throw new CustomError.NotFoundError('Post bulunamadı');
@@ -89,7 +87,7 @@ const updatePost = async (req, res) => {
     }
 
     // Yetki kontrolü
-    if (post.author.user.toString() !== req.user.userId && req.user.role !== 'admin') {
+    if (post.author.toString() !== req.user.userId && req.user.role !== 'admin') {
       throw new CustomError.UnauthorizedError('Bu işlem için yetkiniz yok');
     }
 
@@ -138,7 +136,7 @@ const deletePost = async (req, res) => {
     }
 
     // Yetki kontrolü
-    if (post.author.user.toString() !== req.user.userId && req.user.role !== 'admin') {
+    if (post.author.toString() !== req.user.userId && req.user.role !== 'admin') {
       throw new CustomError.UnauthorizedError('Bu işlem için yetkiniz yok');
     }
 
@@ -162,7 +160,7 @@ const deletePost = async (req, res) => {
 // Get User Posts
 const getUserPosts = async (req, res) => {
   try {
-    const posts = await Post.find({ 'author.user': req.user.userId })
+    const posts = await Post.find({ author: req.user.userId })
       .sort({ order: -1, createdAt: -1 });
     res.status(StatusCodes.OK).json({ posts, count: posts.length });
   } catch (error) {

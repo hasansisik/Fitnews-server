@@ -31,15 +31,7 @@ const MetadataSchema = new mongoose.Schema({
   }
 });
 
-const AuthorSchema = new mongoose.Schema({
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: [true, 'Yazar alanı zorunludur']
-  },
-  name: { type: String, required: true },
-  picture: { type: String }
-});
+
 
 const PostSchema = new mongoose.Schema(
   {
@@ -51,7 +43,11 @@ const PostSchema = new mongoose.Schema(
     },
     content: ContentSchema,    // İçerik alt şeması
     metadata: MetadataSchema, // Metadata alt şeması
-    author: AuthorSchema,     // Yazar alt şeması
+    author: {                 // Yazar alt şeması
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: [true, 'Yazar alanı zorunludur']
+    },
     reviews: [{               // Yorumlar
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Review'
