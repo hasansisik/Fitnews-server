@@ -85,7 +85,6 @@ const updatePost = async (req, res) => {
     if (!post) {
       throw new CustomError.NotFoundError('Post bulunamadı');
     }
-
     // Yetki kontrolü
     if (post.author.toString() !== req.user.userId && req.user.role !== 'admin') {
       throw new CustomError.UnauthorizedError('Bu işlem için yetkiniz yok');
