@@ -11,4 +11,10 @@ router.get('/', supplementController.getAllSupplements);
 // Get supplements by type
 router.get('/type/:type', supplementController.getSupplementsByType);
 
+// Update a supplement
+router.put('/:id', supplementController.updateSupplement);
+
+// Delete a supplement
+router.delete('/:id', supplementController.deleteSupplement);
+
 module.exports = router;
