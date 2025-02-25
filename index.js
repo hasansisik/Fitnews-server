@@ -19,6 +19,7 @@ const postRouter = require('./routers/post');
 const advertisementRouter = require('./routers/advertisement');
 const headerMenuRouter = require('./routers/headerMenu');
 const reviewRouter = require('./routers/review');
+const supplementRouter = require('./routers/supplement');
 
 //midlleware
 const notFoundMiddleware = require('./middleware/not-found')
@@ -37,11 +38,12 @@ app.use('/v1/post', postRouter);
 app.use('/v1/ads', advertisementRouter);
 app.use('/v1/menu', headerMenuRouter);
 app.use('/v1/review', reviewRouter);
+app.use('/v1/supplement', supplementRouter);
 
 app.use(notFoundMiddleware);
 app.use(erorHandlerMiddleware);
 
-const port = process.env.PORT || 3000
+const port = process.env.PORT || 3040
 
 const start = async () => {
     try {
