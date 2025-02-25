@@ -29,7 +29,6 @@ app.use(morgan('tiny'));
 app.use(express.json());
 app.use(cookieParser(process.env.JWT_SECRET_KEY));
 
-app.use(express.static('./public'));
 
 app.use(express.urlencoded({ extended: true }));
 
@@ -42,7 +41,7 @@ app.use('/v1/review', reviewRouter);
 app.use(notFoundMiddleware);
 app.use(erorHandlerMiddleware);
 
-const port = process.env.PORT || 3040
+const port = process.env.PORT || 3000
 
 const start = async () => {
     try {
