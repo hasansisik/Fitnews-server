@@ -137,6 +137,31 @@ const addFormSubmission = async (req, res) => {
   }
 };
 
+// Delete form submission
+const deleteFormSubmission = async (req, res) => {
+  try {
+    const { formId } = req.params;
+    const footer = await Footer.findOne();
+    
+    if (!footer) {
+      return res.status(404).json({ message: "Footer not found" });
+    }
+
+    const formIndex = footer.forms.findIndex(form => form._id.toString() === formId);
+    
+    if (formIndex === -1) {
+      return res.status(404).json({ message: "Form submission not found" });
+    }
+
+    footer.forms.splice(formIndex, 1);
+    await footer.save();
+
+    res.status(200).json({ message: "Form submission deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   getFooter,
   updateAboutUs,
@@ -144,5 +169,6 @@ module.exports = {
   updateCookiePolicy,
   updateKvk,
   addFormSubmission,
+  deleteFormSubmission,
   initializeFooter
 };
