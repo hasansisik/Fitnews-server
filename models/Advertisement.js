@@ -5,11 +5,15 @@ const AdvertisementSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Görsel linki zorunludur']
   },
+  link: {
+    type: String,
+    required: false
+  },
   page: {
     type: String,
     required: [true, 'Sayfa alanı zorunludur'],
     enum: {
-      values: ['home', 'post', 'markets'],
+      values: ['home', 'post', 'markets', 'category'],
       message: '{VALUE} geçerli bir sayfa değil'
     }
   },

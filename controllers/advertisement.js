@@ -5,7 +5,7 @@ const CustomError = require('../errors');
 // Create Advertisement
 const createAdvertisement = async (req, res) => {
   try {
-    const { page, type } = req.body;
+    const { page, type, link } = req.body;
 
     // Aynı sayfa ve tipte reklam var mı kontrol et
     const existingAd = await Advertisement.findOne({ page, type });
