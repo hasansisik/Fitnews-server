@@ -13,7 +13,8 @@ const footerSchema = new mongoose.Schema({
   },
   forms: [{
     email: { type: String, required: true },
-    message: { type: String, required: true }
+    message: { type: String, required: true },
+    createdAt: { type: Date, default: Date.now }
   }]
 }, { timestamps: true });
 

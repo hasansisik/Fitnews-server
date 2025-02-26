@@ -7,22 +7,24 @@ const {
   updateCookiePolicy,
   updateKvk,
   addFormSubmission,
+  deleteFormSubmission,
   initializeFooter
 } = require('../controllers/footerController');
 
-// Initialize footer (should be called only once)
+// Initialize footer
 router.post('/initialize', initializeFooter);
 
-// Get all footer data
+// Get footer data
 router.get('/', getFooter);
 
-// Update specific sections
+// Update sections
 router.put('/about-us', updateAboutUs);
 router.put('/copyright', updateCopyright);
 router.put('/cookie-policy', updateCookiePolicy);
 router.put('/kvk', updateKvk);
 
 // Form submissions
-router.post('/form', addFormSubmission);
+router.post('/forms', addFormSubmission);
+router.delete('/forms/:formId', deleteFormSubmission);
 
 module.exports = router;

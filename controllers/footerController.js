@@ -126,9 +126,9 @@ const addFormSubmission = async (req, res) => {
     const { email, message } = req.body;
     let footer = await Footer.findOne();
     if (!footer) {
-      footer = await Footer.create({ forms: [{ email, message }] });
+      footer = await Footer.create({ forms: [{ email, message, createdAt: new Date() }] });
     } else {
-      footer.forms.push({ email, message });
+      footer.forms.push({ email, message, createdAt: new Date() });
       await footer.save();
     }
     res.status(200).json(footer);
