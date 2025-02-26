@@ -21,6 +21,7 @@ const headerMenuRouter = require('./routers/headerMenu');
 const reviewRouter = require('./routers/review');
 const supplementRouter = require('./routers/supplement');
 const postCategoryRouter = require('./routers/postCategory');
+const footerRouter = require('./routers/footerRoutes');
 
 //midlleware
 const notFoundMiddleware = require('./middleware/not-found')
@@ -41,6 +42,7 @@ app.use('/v1/menu', headerMenuRouter);
 app.use('/v1/review', reviewRouter);
 app.use('/v1/supplement', supplementRouter);
 app.use('/v1/post-category', postCategoryRouter);
+app.use('/v1/footer', footerRouter);
 
 app.use(notFoundMiddleware);
 app.use(erorHandlerMiddleware);
