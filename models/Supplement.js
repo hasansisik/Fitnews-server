@@ -29,6 +29,9 @@ const supplementSchema = new mongoose.Schema({
             type: String,
             required: true,
             trim: true
+        },
+        scale: {
+            type: Number
         }
     }],
     createdAt: {

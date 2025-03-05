@@ -64,11 +64,12 @@ let supplementsCache = {
 exports.createSupplement = async (req, res) => {
   try {
     const supplementData = req.body;
+    console.log("Creating new supplement:", supplementData);
 
     // Scrape prices for each brand
     for (let brand of supplementData.brands) {
       const scrapedPrice = await scrapePriceFromTrendyol(brand.productLink);
-      brand.price = scrapedPrice;
+      brand.price = scrapedPrice / (brand.scale || 1); // Divide by scale if provided
     }
 
     // Calculate average price - total price divided by total number of brands
@@ -150,7 +151,7 @@ exports.updateSupplement = async (req, res) => {
     if (updateData.brands) {
       for (let brand of updateData.brands) {
         const scrapedPrice = await scrapePriceFromTrendyol(brand.productLink);
-        brand.price = scrapedPrice;
+        brand.price = scrapedPrice / (brand.scale || 1); // Divide by scale if provided
       }
 
       // Calculate average price - total price divided by total number of brands
