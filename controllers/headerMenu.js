@@ -5,7 +5,7 @@ const CustomError = require('../errors');
 // Create Menu Item
 const createMenuItem = async (req, res) => {
   try {
-    const { title, urlPath } = req.body;
+    const { title, urlPath, subTitles } = req.body;
 
     // URL benzersizlik kontrolü
     const existingMenu = await HeaderMenu.findOne({ urlPath });
@@ -13,7 +13,13 @@ const createMenuItem = async (req, res) => {
       throw new CustomError.BadRequestError('Bu URL zaten kullanılıyor');
     }
 
-    const menuItem = await HeaderMenu.create(req.body);
+    // Alt başlıkların URL'lerini ana URL ile birleştir
+    const processedSubTitles = subTitles.map(sub => ({
+      ...sub,
+      urlPath: `${urlPath}${sub.urlPath}`
+    }));
+
+    const menuItem = await HeaderMenu.create({ title, urlPath, subTitles: processedSubTitles });
     res.status(StatusCodes.CREATED).json({ menuItem });
   } catch (error) {
     if (error instanceof CustomError.BadRequestError) {
@@ -40,7 +46,8 @@ const getAllMenuItems = async (req, res) => {
     }
 
     const menuItems = await HeaderMenu.find(queryObject)
-      .sort({ order: 1, createdAt: 1 }); // Sıralama önemli: önce order'a göre sonra oluşturma tarihine göre
+      .sort({ order: 1, createdAt: 1 })
+      .populate('subTitles'); // Alt menüleri de getir
     
     res.status(StatusCodes.OK).json({ menuItems, count: menuItems.length });
   } catch (error) {
@@ -56,7 +63,7 @@ const getAllMenuItems = async (req, res) => {
 const updateMenuItem = async (req, res) => {
   try {
     const { id } = req.params;
-    const { urlPath } = req.body;
+    const { urlPath, subTitles } = req.body;
 
     // URL değişiyorsa benzersizlik kontrolü yap
     if (urlPath) {
@@ -69,9 +76,15 @@ const updateMenuItem = async (req, res) => {
       }
     }
 
+    // Alt başlıkların URL'lerini ana URL ile birleştir
+    const processedSubTitles = subTitles.map(sub => ({
+      ...sub,
+      urlPath: `${urlPath}${sub.urlPath}`
+    }));
+
     const menuItem = await HeaderMenu.findByIdAndUpdate(
       id,
-      req.body,
+      { urlPath, subTitles: processedSubTitles },
       { new: true, runValidators: true }
     );
 

@@ -1,5 +1,18 @@
 const mongoose = require("mongoose");
 
+const SubTitleSchema = new mongoose.Schema({
+  title: {
+    type: String,
+    required: [true, 'Alt başlık alanı zorunludur'],
+    trim: true
+  },
+  urlPath: {
+    type: String,
+    required: [true, 'Alt URL alanı zorunludur'],
+    trim: true,
+  }
+});
+
 const HeaderMenuSchema = new mongoose.Schema({
   title: {
     type: String,
@@ -18,7 +31,8 @@ const HeaderMenuSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
-  }
+  },
+  subTitles: [SubTitleSchema]
 }, { 
   timestamps: true,
   toJSON: { 
