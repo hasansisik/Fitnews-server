@@ -92,7 +92,7 @@ exports.getAllSupplements = async (req, res) => {
     supplementsCache.timestamp &&
     Date.now() - supplementsCache.timestamp < supplementsCache.TTL
   ) {
-    return res.json(supplementsCache.data);
+    return res.status(200).json(supplementsCache.data); // Change 304 to 200
   }
 
   // If no cache or expired, fetch fresh data
@@ -120,10 +120,10 @@ exports.getAllSupplements = async (req, res) => {
         supplementsCache.data = updatedSupplements;
         supplementsCache.timestamp = Date.now();
 
-        res.json(updatedSupplements);
+        res.status(200).json(updatedSupplements); // Ensure 200 status code
       } catch (error) {
         console.error("Error updating supplement prices:", error);
-        res.json(supplements);
+        res.status(500).json(supplements); // Ensure 500 status code on error
       }
     })
     .catch((error) => {
@@ -164,6 +164,10 @@ exports.updateSupplement = async (req, res) => {
     if (!supplement) {
       return res.status(404).json({ message: "Supplement not found" });
     }
+
+    // Clear cache after update
+    supplementsCache.data = null;
+    supplementsCache.timestamp = null;
     
     res.status(200).json(supplement);
   } catch (error) {
@@ -180,6 +184,10 @@ exports.deleteSupplement = async (req, res) => {
     if (!supplement) {
       return res.status(404).json({ message: "Supplement not found" });
     }
+
+    // Clear cache after delete
+    supplementsCache.data = null;
+    supplementsCache.timestamp = null;
     
     res.status(200).json({ message: "Supplement deleted successfully" });
   } catch (error) {
