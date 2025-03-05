@@ -69,7 +69,7 @@ exports.createSupplement = async (req, res) => {
     // Scrape prices for each brand
     for (let brand of supplementData.brands) {
       const scrapedPrice = await scrapePriceFromTrendyol(brand.productLink);
-      brand.price = scrapedPrice / (brand.scale || 1); // Divide by scale if provided
+      brand.price = scrapedPrice / (brand.scale); // Divide by scale if provided
     }
 
     // Calculate average price - total price divided by total number of brands
@@ -86,49 +86,35 @@ exports.createSupplement = async (req, res) => {
 
 // Get all supplements with updated prices
 exports.getAllSupplements = async (req, res) => {
-  // Check if we have valid cached data
-  if (
-    supplementsCache.data &&
-    supplementsCache.timestamp &&
-    Date.now() - supplementsCache.timestamp < supplementsCache.TTL
-  ) {
-    return res.status(200).json(supplementsCache.data); // Change 304 to 200
-  }
+  try {
+    const supplements = await Supplement.find();
 
-  // If no cache or expired, fetch fresh data
-  Supplement.find()
-    .then(async (supplements) => {
-      try {
-        // Update prices in parallel
-        const updatedSupplements = await Promise.all(
-          supplements.map(async (supplement) => {
-            const supplementObj = supplement.toObject();
-            const updatedBrands = await Promise.all(
-              supplementObj.brands.map(async (brand) => {
-                if (brand.productLink && brand.productLink.includes("trendyol")) {
-                  const currentPrice = await scrapePriceFromTrendyol(brand.productLink);
-                  return { ...brand, price: currentPrice || brand.price };
-                }
-                return brand;
-              })
-            );
-            return { ...supplementObj, brands: updatedBrands };
+    // Update prices in parallel
+    const updatedSupplements = await Promise.all(
+      supplements.map(async (supplement) => {
+        const supplementObj = supplement.toObject();
+        const updatedBrands = await Promise.all(
+          supplementObj.brands.map(async (brand) => {
+            if (brand.productLink && brand.productLink.includes("trendyol")) {
+              const currentPrice = await scrapePriceFromTrendyol(brand.productLink);
+              return { ...brand, price: currentPrice || brand.price };
+            }
+            return brand;
           })
         );
+        return { ...supplementObj, brands: updatedBrands };
+      })
+    );
 
-        // Update cache
-        supplementsCache.data = updatedSupplements;
-        supplementsCache.timestamp = Date.now();
+    // Update cache
+    supplementsCache.data = updatedSupplements;
+    supplementsCache.timestamp = Date.now();
 
-        res.status(200).json(updatedSupplements); // Ensure 200 status code
-      } catch (error) {
-        console.error("Error updating supplement prices:", error);
-        res.status(500).json(supplements); // Ensure 500 status code on error
-      }
-    })
-    .catch((error) => {
-      res.status(500).json({ message: error.message });
-    });
+    res.status(200).json(updatedSupplements); // Ensure 200 status code
+  } catch (error) {
+    console.error("Error updating supplement prices:", error);
+    res.status(500).json({ message: error.message }); // Ensure 500 status code on error
+  }
 };
 
 // Get supplement by type
@@ -151,7 +137,7 @@ exports.updateSupplement = async (req, res) => {
     if (updateData.brands) {
       for (let brand of updateData.brands) {
         const scrapedPrice = await scrapePriceFromTrendyol(brand.productLink);
-        brand.price = scrapedPrice / (brand.scale || 1); // Divide by scale if provided
+        brand.price = scrapedPrice / (brand.scale); // Divide by scale if provided
       }
 
       // Calculate average price - total price divided by total number of brands

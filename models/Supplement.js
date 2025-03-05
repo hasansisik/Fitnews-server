@@ -1,5 +1,25 @@
 const mongoose = require('mongoose');
 
+const brandSchema = new mongoose.Schema({
+    brandName: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    price: {
+        type: Number,
+        required: true
+    },
+    productLink: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    scale: {
+        type: Number
+    }
+});
+
 const supplementSchema = new mongoose.Schema({
     name: {
         type: String,
@@ -15,25 +35,7 @@ const supplementSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
-    brands: [{
-        brandName: {
-            type: String,
-            required: true,
-            trim: true
-        },
-        price: {
-            type: Number,
-            required: true
-        },
-        productLink: {
-            type: String,
-            required: true,
-            trim: true
-        },
-        scale: {
-            type: Number
-        }
-    }],
+    brands: [brandSchema],
     createdAt: {
         type: Date,
         default: Date.now
