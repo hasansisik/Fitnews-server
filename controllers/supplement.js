@@ -13,52 +13,45 @@ async function scrapePriceFromTrendyol(url) {
     });
     const $ = cheerio.load(response.data);
     const priceText = $(".prc-dsc").first().text().trim();
-    
+
     if (!priceText) {
       console.warn(`No price found for URL: ${url}`);
       return 0;
     }
-    
+
     // Remove 'TL' and any extra spaces
     const cleanPrice = priceText.replace("TL", "").trim();
-    
+
     // Split by comma to separate TL and kuruş
     const [lira, kurus] = cleanPrice.split(",");
-    
+
     if (!lira) {
       console.warn(`Invalid price format for URL: ${url}`);
       return 0;
     }
-    
+
     // Remove dots from lira part (e.g., "1.240" becomes "1240")
     const liraWithoutDots = lira.replace(/\./g, "");
-    
+
     // Convert to number
     const liraAmount = parseInt(liraWithoutDots, 10);
     const kurusAmount = kurus ? parseInt(kurus, 10) : 0;
-    
+
     if (isNaN(liraAmount)) {
       console.warn(`Failed to parse lira amount for URL: ${url}`);
       return 0;
     }
-    
+
     // Calculate total price in kuruş (1 TL = 100 kuruş)
-    const totalKurus = (liraAmount * 100) + kurusAmount;
+    const totalKurus = liraAmount * 100 + kurusAmount;
     const finalPrice = totalKurus / 100;
-    
+
     return isNaN(finalPrice) ? 0 : finalPrice; // Ensure we never return NaN
   } catch (error) {
     console.error(`Error scraping price from ${url}:`, error.message);
     return 0;
   }
 }
-
-// Cache for supplements data
-let supplementsCache = {
-  data: null,
-  timestamp: null,
-  TTL: 5 * 60 * 1000 // 5 minutes in milliseconds
-};
 
 // Create new supplement
 exports.createSupplement = async (req, res) => {
@@ -69,11 +62,14 @@ exports.createSupplement = async (req, res) => {
     // Scrape prices for each brand
     for (let brand of supplementData.brands) {
       const scrapedPrice = await scrapePriceFromTrendyol(brand.productLink);
-      brand.price = scrapedPrice / (brand.scale); // Divide by scale if provided
+      brand.price = scrapedPrice / brand.scale; // Divide by scale if provided
     }
 
     // Calculate average price - total price divided by total number of brands
-    const totalPrice = supplementData.brands.reduce((sum, brand) => sum + (brand.price || 0), 0);
+    const totalPrice = supplementData.brands.reduce(
+      (sum, brand) => sum + (brand.price || 0),
+      0
+    );
     supplementData.averagePrice = totalPrice / supplementData.brands.length;
 
     const supplement = new Supplement(supplementData);
@@ -87,7 +83,7 @@ exports.createSupplement = async (req, res) => {
 // Get all supplements with updated prices
 exports.getAllSupplements = async (req, res) => {
   try {
-    const supplements = await Supplement.find();
+    const supplements = await Supplement.find().populate("brands");
 
     // Update prices in parallel
     const updatedSupplements = await Promise.all(
@@ -97,7 +93,8 @@ exports.getAllSupplements = async (req, res) => {
           supplementObj.brands.map(async (brand) => {
             if (brand.productLink && brand.productLink.includes("trendyol")) {
               const currentPrice = await scrapePriceFromTrendyol(brand.productLink);
-              return { ...brand, price: currentPrice || brand.price };
+              brand.price = currentPrice / brand.scale; // Divide by scale if provided
+              return { ...brand, price: brand.price };
             }
             return brand;
           })
@@ -106,11 +103,9 @@ exports.getAllSupplements = async (req, res) => {
       })
     );
 
-    // Update cache
-    supplementsCache.data = updatedSupplements;
-    supplementsCache.timestamp = Date.now();
-
     res.status(200).json(updatedSupplements); // Ensure 200 status code
+    console.log("Supplement updated:", JSON.stringify(updatedSupplements, null, 2)); // Detailed log
+
   } catch (error) {
     console.error("Error updating supplement prices:", error);
     res.status(500).json({ message: error.message }); // Ensure 500 status code on error
@@ -137,24 +132,25 @@ exports.updateSupplement = async (req, res) => {
     if (updateData.brands) {
       for (let brand of updateData.brands) {
         const scrapedPrice = await scrapePriceFromTrendyol(brand.productLink);
-        brand.price = scrapedPrice / (brand.scale); // Divide by scale if provided
+        brand.price = scrapedPrice / brand.scale; // Divide by scale if provided
       }
 
       // Calculate average price - total price divided by total number of brands
-      const totalPrice = updateData.brands.reduce((sum, brand) => sum + (brand.price || 0), 0);
+      const totalPrice = updateData.brands.reduce(
+        (sum, brand) => sum + (brand.price || 0),
+        0
+      );
       updateData.averagePrice = totalPrice / updateData.brands.length;
     }
 
-    const supplement = await Supplement.findByIdAndUpdate(id, updateData, { new: true });
-    
+    const supplement = await Supplement.findByIdAndUpdate(id, updateData, {
+      new: true,
+    });
+
     if (!supplement) {
       return res.status(404).json({ message: "Supplement not found" });
     }
 
-    // Clear cache after update
-    supplementsCache.data = null;
-    supplementsCache.timestamp = null;
-    
     res.status(200).json(supplement);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -166,15 +162,11 @@ exports.deleteSupplement = async (req, res) => {
   try {
     const { id } = req.params;
     const supplement = await Supplement.findByIdAndDelete(id);
-    
+
     if (!supplement) {
       return res.status(404).json({ message: "Supplement not found" });
     }
 
-    // Clear cache after delete
-    supplementsCache.data = null;
-    supplementsCache.timestamp = null;
-    
     res.status(200).json({ message: "Supplement deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
