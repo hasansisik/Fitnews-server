@@ -26,6 +26,9 @@ const supplementSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
+  amount: {
+    type: String,
+  },
   category: {
     type: String,
   },
