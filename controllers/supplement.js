@@ -103,7 +103,6 @@ exports.getAllSupplements = async (req, res) => {
     );
 
     res.status(200).json(updatedSupplements); // Ensure 200 status code
-    console.log("Supplement updated:", JSON.stringify(updatedSupplements, null, 2)); // Detailed log
 
   } catch (error) {
     console.error("Error updating supplement prices:", error);

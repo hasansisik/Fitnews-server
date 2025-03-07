@@ -15,7 +15,11 @@ const footerSchema = new mongoose.Schema({
     email: { type: String, required: true },
     message: { type: String, required: true },
     createdAt: { type: Date, default: Date.now }
-  }]
+  }],
+  socialMenu: [{
+    title: { type: String, required: true },
+    url: { type: String, required: true }
+  }],
 }, { timestamps: true });
 
 const Footer = mongoose.model('Footer', footerSchema);

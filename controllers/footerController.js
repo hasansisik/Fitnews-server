@@ -120,6 +120,48 @@ const updateKvk = async (req, res) => {
   }
 };
 
+// Update social menu
+const updateSocialMenu = async (req, res) => {
+  try {
+    const socialMenuItems = req.body;
+
+    if (!Array.isArray(socialMenuItems) || socialMenuItems.length === 0) {
+      return res.status(400).json({ message: "Social menu items are required" });
+    }
+
+    let footer = await Footer.findOne();
+    if (!footer) {
+      footer = await Footer.create({ socialMenu: socialMenuItems });
+    } else {
+      footer.socialMenu = socialMenuItems;
+      await footer.save();
+    }
+    res.status(200).json(footer);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const deleteSocialMenuItem = async (req, res) => {
+  try {
+    const { itemId } = req.params;
+    let footer = await Footer.findOne();
+
+    if (!footer || !footer.socialMenu) {
+      return res.status(404).json({ message: "Footer or social menu not found" });
+    }
+
+    footer.socialMenu = footer.socialMenu.filter(item => item._id.toString() !== itemId);
+    await footer.save();
+
+    res.status(200).json(footer);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 // Add form submission
 const addFormSubmission = async (req, res) => {
   try {
@@ -170,5 +212,7 @@ module.exports = {
   updateKvk,
   addFormSubmission,
   deleteFormSubmission,
-  initializeFooter
+  initializeFooter,
+  updateSocialMenu,
+  deleteSocialMenuItem
 };

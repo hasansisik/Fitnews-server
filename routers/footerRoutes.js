@@ -8,7 +8,9 @@ const {
   updateKvk,
   addFormSubmission,
   deleteFormSubmission,
-  initializeFooter
+  initializeFooter,
+  updateSocialMenu,
+  deleteSocialMenuItem
 } = require('../controllers/footerController');
 
 // Initialize footer
@@ -22,6 +24,8 @@ router.put('/about-us', updateAboutUs);
 router.put('/copyright', updateCopyright);
 router.put('/cookie-policy', updateCookiePolicy);
 router.put('/kvk', updateKvk);
+router.put('/social-menu', updateSocialMenu);
+router.delete('/social-menu/:itemId', deleteSocialMenuItem);
 
 // Form submissions
 router.post('/forms', addFormSubmission);
