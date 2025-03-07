@@ -57,7 +57,6 @@ async function scrapePriceFromTrendyol(url) {
 exports.createSupplement = async (req, res) => {
   try {
     const supplementData = req.body;
-    console.log("Creating new supplement:", supplementData);
 
     // Scrape prices for each brand
     for (let brand of supplementData.brands) {
